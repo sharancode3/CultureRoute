@@ -41,6 +41,7 @@ from cultureroute.datasets_view import render_datasets_screen
 from cultureroute.insights_view import render_insights_screen
 from cultureroute.model_view import render_model_screen
 from cultureroute.ui_components import (
+    apply_editorial_chart_theme,
     inject_editorial_css,
     render_editorial_hero,
     render_scoped_stats,
@@ -92,26 +93,136 @@ from cultureroute.dev_lab import (
     get_syllabus_reference_units,
 )
 
-# Optional legacy data files (preserved outside active product path)
+# Optional real data paths
 BOUNDARY_GEOJSON = Path(__file__).resolve().parent / "data" / "india_boundary.geojson"
-boundary_validator = IndiaBoundaryValidator(BOUNDARY_GEOJSON) if BOUNDARY_GEOJSON.exists() else None
 REAL_CATALOG_DB = Path(__file__).resolve().parent / "data" / "real_catalog.db"
 VENUE_EVIDENCE_DB = Path(__file__).resolve().parent / "data" / "venue_evidence.db"
 
-# Ensure pilot evidence is seeded if evidence DB does not exist
-if not VENUE_EVIDENCE_DB.exists():
-    try:
-        from cultureroute.pilot_evidence import seed_pilot_evidence
-        seed_pilot_evidence(VENUE_EVIDENCE_DB)
-    except Exception:
-        pass
 
-# Ensure canonical study database is built
-if not DEFAULT_STUDY_DB.exists():
-    try:
-        build_study_database(DEFAULT_STUDY_DB)
-    except Exception:
-        pass
+@st.cache_resource
+def _get_boundary_validator():
+    """Load and parse the India boundary GeoJSON once per server lifecycle."""
+    return IndiaBoundaryValidator(BOUNDARY_GEOJSON) if BOUNDARY_GEOJSON.exists() else None
+
+
+@st.cache_resource
+def _ensure_startup_databases() -> bool:
+    """Ensure local SQLite caches exist cleanly once per server startup."""
+    if not VENUE_EVIDENCE_DB.exists():
+        try:
+            from cultureroute.pilot_evidence import seed_pilot_evidence
+            seed_pilot_evidence(VENUE_EVIDENCE_DB)
+        except Exception:
+            pass
+    if not DEFAULT_STUDY_DB.exists():
+        try:
+            build_study_database(DEFAULT_STUDY_DB)
+        except Exception:
+            pass
+    return True
+
+
+def _ensure_real_catalog_db() -> bool:
+    """Build real_catalog.db lazily from committed source extracts when missing."""
+    if REAL_CATALOG_DB.exists():
+        return True
+    unlocode_src = Path(__file__).resolve().parent / "data" / "unlocode_raw.csv"
+    unesco_src = Path(__file__).resolve().parent / "data" / "wikidata_unesco_india.json"
+    if unlocode_src.exists() and BOUNDARY_GEOJSON.exists():
+        try:
+            from cultureroute.ingest import run_streaming_import
+            run_streaming_import(
+                unlocode_csv=unlocode_src,
+                unesco_json=unesco_src if unesco_src.exists() else None,
+                boundary_geojson=BOUNDARY_GEOJSON,
+                output_db=REAL_CATALOG_DB,
+            )
+            return REAL_CATALOG_DB.exists()
+        except Exception:
+            return False
+    return False
+
+
+@st.cache_data(ttl=3600)
+def _get_city_guides_df(city_id: str) -> pd.DataFrame:
+    with open_study_cache() as conn:
+        rows = conn.execute(
+            "SELECT display_name, languages, specialisation, years_experience, rating, review_count "
+            "FROM tour_guides WHERE city_id = ? ORDER BY rating DESC",
+            (city_id,),
+        ).fetchall()
+    return pd.DataFrame([dict(r) for r in rows])
+
+
+@st.cache_data(ttl=3600)
+def _get_devlab_actions_df() -> pd.DataFrame:
+    with open_study_cache() as conn:
+        return pd.read_sql_query(
+            "SELECT interaction_type, count(*) as count FROM user_interactions GROUP BY interaction_type ORDER BY count DESC",
+            conn,
+        )
+
+
+@st.cache_data(ttl=3600)
+def _get_devlab_poi_costs_df() -> pd.DataFrame:
+    with open_study_cache() as conn:
+        return pd.read_sql_query("""
+            SELECT p.poi_id, p.name, p.poi_category, c.name as city_name, CAST(p.entry_cost AS REAL) as entry_cost
+            FROM activities_poi p
+            JOIN cities c USING(city_id)
+            WHERE c.country_code = 'IN' AND p.entry_cost IS NOT NULL
+        """, conn)
+
+
+@st.cache_data(ttl=3600)
+def _get_devlab_events_df() -> pd.DataFrame:
+    with open_study_cache() as conn:
+        return pd.read_sql_query("""
+            SELECT e.name, e.expected_footfall, e.recurrence, e.season, c.name as city_name
+            FROM events_festivals e
+            JOIN cities c USING(city_id)
+            WHERE c.country_code = 'IN' AND e.expected_footfall IS NOT NULL
+            ORDER BY e.expected_footfall ASC
+        """, conn)
+
+
+@st.cache_data(ttl=3600)
+def _get_devlab_bivariate_df() -> pd.DataFrame:
+    with open_study_cache() as conn:
+        return pd.read_sql_query("""
+            SELECT a.poi_id, a.name, a.poi_category, c.name as city_name, CAST(a.entry_cost AS REAL) as entry_cost, count(ui.interaction_id) as saves_count
+            FROM activities_poi a
+            JOIN cities c USING(city_id)
+            LEFT JOIN user_interactions ui ON ui.entity_id = a.poi_id AND ui.interaction_type = 'save'
+            WHERE c.country_code = 'IN' AND a.entry_cost IS NOT NULL
+            GROUP BY a.poi_id
+            HAVING saves_count > 0
+        """, conn)
+
+
+@st.cache_data(ttl=3600)
+def _run_planner_pair_cached(
+    city_name: str,
+    visit_date: str,
+    start_time: str,
+    max_duration_hours: float,
+    budget_inr: float,
+    target_stops: int,
+    transport_mode: str,
+    step_free_only: bool,
+    preferred_categories: tuple[str, ...],
+):
+    return plan_synthetic_day(
+        city_name=city_name,
+        visit_date=visit_date,
+        start_time=start_time,
+        max_duration_hours=max_duration_hours,
+        budget_inr=budget_inr,
+        target_stops=target_stops,
+        transport_mode=transport_mode,
+        step_free_only=step_free_only,
+        preferred_categories=list(preferred_categories) if preferred_categories else [],
+    )
 
 
 def render_plan_spatial_map(plan: DayPlan, plan_label: str, line_color: str = "#365376"):
@@ -204,26 +315,24 @@ def render_plan_spatial_map(plan: DayPlan, plan_label: str, line_color: str = "#
         ),
         showlegend=False
     )
+    apply_editorial_chart_theme(fig)
     st.plotly_chart(fig, use_container_width=True)
 
-# Page Configuration
+# Page Configuration (must be first Streamlit command; pass path string so PIL never re-decodes per rerun)
 FAVICON_PNG = Path(__file__).resolve().parent / "site" / "dist" / "assets" / "favicon.png"
-fav_img = None
-if FAVICON_PNG.exists():
-    try:
-        fav_img = Image.open(FAVICON_PNG)
-    except Exception:
-        fav_img = None
-
 st.set_page_config(
     page_title="CultureRoute · Cultural Day Trip Planner & DEV Lab",
-    page_icon=fav_img if fav_img is not None else None,
+    page_icon=str(FAVICON_PNG) if FAVICON_PNG.exists() else None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Inject Editorial CSS System
+# Inject Editorial CSS System & warm-paper Plotly defaults
 inject_editorial_css()
+
+# Warm up cached local SQLite stores and boundary validator once per server lifecycle
+_ensure_startup_databases()
+boundary_validator = _get_boundary_validator()
 
 # Session State Initialization for Settings
 if "default_city" not in st.session_state:
@@ -311,8 +420,7 @@ render_sidebar_navigation(view_mode)
 if view_mode == "Overview":
     render_editorial_hero()
 
-    with st.spinner("Verifying read-only source databases..."):
-        report = verify_and_audit_study()
+    report = verify_and_audit_study()
 
     render_scoped_stats(
         cities=report.india_cities_count,
@@ -362,6 +470,7 @@ if view_mode == "Overview":
             xaxis=dict(range=[0, 45], title="Cultural Proportion (%)"),
             yaxis=dict(title="")
         )
+        apply_editorial_chart_theme(fig_prev)
         st.plotly_chart(fig_prev, use_container_width=True)
 
     with prev_c2:
@@ -380,6 +489,7 @@ if view_mode == "Overview":
             margin=dict(l=10, r=10, t=35, b=10),
             showlegend=False
         )
+        apply_editorial_chart_theme(fig_donut)
         st.plotly_chart(fig_donut, use_container_width=True)
 
     # Frequently Asked Questions
@@ -424,23 +534,18 @@ if view_mode == "Overview":
     </div>
     """, unsafe_allow_html=True)
 
+    def _nav_to(target_view: str) -> None:
+        st.query_params["view"] = target_view
+
     cta_c1, cta_c2, cta_c3, cta_c4 = st.columns(4)
     with cta_c1:
-        if st.button("Explore Discover", key="btn_cta_discover"):
-            st.query_params["view"] = "discover"
-            st.rerun()
+        st.button("Explore Discover", key="btn_cta_discover", on_click=_nav_to, args=("discover",))
     with cta_c2:
-        if st.button("Open Day Planner", key="btn_cta_planner"):
-            st.query_params["view"] = "planner"
-            st.rerun()
+        st.button("Open Day Planner", key="btn_cta_planner", on_click=_nav_to, args=("planner",))
     with cta_c3:
-        if st.button("View Statistical Insights", key="btn_cta_insights"):
-            st.query_params["view"] = "insights"
-            st.rerun()
+        st.button("View Statistical Insights", key="btn_cta_insights", on_click=_nav_to, args=("insights",))
     with cta_c4:
-        if st.button("Launch DEV Lab", key="btn_cta_lab"):
-            st.query_params["view"] = "devlab"
-            st.rerun()
+        st.button("Launch DEV Lab", key="btn_cta_lab", on_click=_nav_to, args=("devlab",))
 
 
 # ==============================================================================
@@ -486,12 +591,21 @@ elif view_mode == "Discover":
 
         # Quick City Hubs Pills for 1-Touch Navigation
         st.markdown("**Quick City Hubs (Instant 1-Click Navigation):**")
-        quick_hubs = ["Jaipur", "Delhi", "Mumbai", "Varanasi", "Kochi", "Agra", "Bengaluru", "Kolkata"]
-        picked_hub = st.pills("Quick City Hubs", quick_hubs, key="pills_discover_hub", label_visibility="collapsed")
-        if picked_hub and picked_hub != st.session_state.get("discover_city_select"):
-            st.session_state["discover_state_filter"] = "All States (45 Cities)"
-            st.session_state["discover_city_select"] = picked_hub
-            st.rerun()
+        quick_hubs = ["Jaipur", "New Delhi", "Mumbai", "Varanasi", "Kochi", "Agra", "Bengaluru", "Kolkata"]
+
+        def _on_discover_pill_pick() -> None:
+            picked = st.session_state.get("pills_discover_hub")
+            if picked:
+                st.session_state["discover_state_filter"] = "All States (45 Cities)"
+                st.session_state["discover_city_select"] = picked
+
+        st.pills(
+            "Quick City Hubs",
+            quick_hubs,
+            key="pills_discover_hub",
+            label_visibility="collapsed",
+            on_change=_on_discover_pill_pick,
+        )
 
         d_col1, d_col2 = st.columns([1.5, 2.5])
         with d_col1:
@@ -602,21 +716,16 @@ elif view_mode == "Discover":
             st.warning(f"No attractions in {selected_city_name} match the active filters (Category: '{cat_filter}', Fee Status: '{price_filter}', Step-Free: {step_free_filter}).")
             st.info("Click 'Reset' or select 'All Categories' / 'All Prices' to display all catalog attractions.")
 
-        # WanderMatch Guide Telemetry Integration
-        with open_study_cache() as conn:
-            guides_rows = conn.execute(
-                "SELECT display_name, languages, specialisation, years_experience, rating, review_count "
-                "FROM tour_guides WHERE city_id = ? ORDER BY rating DESC",
-                (selected_city["city_id"],)
-            ).fetchall()
+        # WanderMatch Guide Telemetry Integration (cached)
+        guides_df_raw = _get_city_guides_df(selected_city["city_id"])
 
-        with st.expander(f"WanderMatch Guide Telemetry for {selected_city_name} ({len(guides_rows)} registered profiles)"):
+        with st.expander(f"WanderMatch Guide Telemetry for {selected_city_name} ({len(guides_df_raw)} registered profiles)"):
             st.caption(
                 "Read-only guide specialization records from WanderMatch pack (PS-11.db). "
                 "Informational telemetry only; CultureRoute does not offer commercial guide booking."
             )
-            if guides_rows:
-                g_df = pd.DataFrame([dict(r) for r in guides_rows]).rename(columns={
+            if not guides_df_raw.empty:
+                g_df = guides_df_raw.rename(columns={
                     "display_name": "Guide Name",
                     "languages": "Languages",
                     "specialisation": "Domain Specialization",
@@ -731,6 +840,7 @@ elif view_mode == "Discover":
                             title_text=""
                         )
                     )
+                    apply_editorial_chart_theme(fig_bar)
                     st.plotly_chart(fig_bar, use_container_width=True)
                     st.caption("Intuitive Bar Chart: Displays each venue's exact distance in km from the municipal center, colored by cultural category, eliminating unreadable overlapping points.")
 
@@ -777,6 +887,7 @@ elif view_mode == "Discover":
                                 title_text=""
                             )
                         )
+                        apply_editorial_chart_theme(fig_map)
                         st.plotly_chart(fig_map, use_container_width=True)
                         st.caption("Geographic Map: Placed directly on OpenStreetMap city streets, roads, and landmarks for real-world spatial orientation.")
                     except Exception as ex:
@@ -788,6 +899,7 @@ elif view_mode == "Discover":
                             color_discrete_map=category_palette
                         )
                         fig_fallback.update_layout(height=440, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff")
+                        apply_editorial_chart_theme(fig_fallback)
                         st.plotly_chart(fig_fallback, use_container_width=True)
 
                 elif spatial_mode == "Neighborhood Proximity Clusters":
@@ -865,6 +977,7 @@ elif view_mode == "Discover":
                         plot_bgcolor="#ffffff",
                         margin=dict(l=20, r=20, t=40, b=20)
                     )
+                    apply_editorial_chart_theme(fig_scatter)
                     st.plotly_chart(fig_scatter, use_container_width=True)
                     st.caption("Offline Coordinate Plot: Raw GPS latitude and longitude grid coordinates.")
 
@@ -890,6 +1003,7 @@ elif view_mode == "Discover":
                     paper_bgcolor="#f7f3e9",
                     margin=dict(l=10, r=10, t=40, b=10)
                 )
+                apply_editorial_chart_theme(fig_city_pie)
                 st.plotly_chart(fig_city_pie, use_container_width=True)
 
                 # Quick Summary Cards below Donut
@@ -926,6 +1040,9 @@ elif view_mode == "Discover":
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+        if not REAL_CATALOG_DB.exists():
+            _ensure_real_catalog_db()
 
         if not REAL_CATALOG_DB.exists():
             st.warning("Real catalog database (data/real_catalog.db) is not present. Run `python -m cultureroute.ingest` to build the real-place index.")
@@ -1132,6 +1249,7 @@ elif view_mode == "Discover":
                                 plot_bgcolor="#ffffff",
                                 margin=dict(l=20, r=20, t=40, b=20)
                             )
+                            apply_editorial_chart_theme(fig_spatial)
                             st.plotly_chart(fig_spatial, use_container_width=True)
                             st.caption("Schematic Proximity Points: Straight-line haversine coordinates. Does not represent routed road geometry.")
 
@@ -1375,71 +1493,80 @@ elif view_mode == "Planner":
         c_names = [c["name"] for c in cities]
 
         # Quick Benchmark Hubs & Presets
-        st.markdown("**Quick Benchmark Hubs & Presets (Instant 1-Click Load):**")
-        quick_plan_hubs = ["Jaipur (Baseline Spec)", "Agra (Cultural Preset)", "Delhi", "Mumbai", "Varanasi", "Kochi", "Bengaluru"]
-        picked_plan_hub = st.pills("Quick Benchmark Hubs", quick_plan_hubs, key="pills_planner_hub", label_visibility="collapsed")
-        if picked_plan_hub:
-            if "Jaipur" in picked_plan_hub:
+        def _on_planner_hub_pick():
+            picked = st.session_state.get("pills_planner_hub")
+            if not picked:
+                return
+            if "Jaipur" in picked:
                 p_target = "Jaipur"
                 b_target = 1000.0
-            elif "Agra" in picked_plan_hub:
+            elif "Agra" in picked:
                 p_target = "Agra"
                 b_target = 2000.0
             else:
-                p_target = picked_plan_hub
-                b_target = st.session_state.get("form_p_budget", 1000.0)
+                p_target = "New Delhi" if picked == "Delhi" else picked
+                b_target = float(st.session_state.get("form_p_budget", 1000.0))
+            st.session_state["form_p_city"] = p_target
+            st.session_state["p_city"] = p_target
+            st.session_state["form_p_budget"] = b_target
+            st.session_state["p_budget"] = b_target
 
-            if p_target != st.session_state.get("form_p_city"):
-                st.session_state["form_p_city"] = p_target
-                st.session_state["p_city"] = p_target
-                st.session_state["form_p_budget"] = b_target
-                st.session_state["p_budget"] = b_target
-                st.rerun()
+        def _load_jaipur_baseline_planner():
+            st.session_state["form_p_city"] = "Jaipur"
+            st.session_state["form_p_date"] = date(2026, 8, 29)
+            st.session_state["form_p_start"] = "09:00"
+            st.session_state["form_p_window"] = 6.0
+            st.session_state["form_p_budget"] = 1000.0
+            st.session_state["form_p_stops"] = 3
+            st.session_state["form_p_mode"] = "cab"
+            st.session_state["form_p_step_free"] = False
+            st.session_state["form_p_pref_cats"] = []
+            st.session_state["p_city"] = "Jaipur"
+            st.session_state["p_date"] = date(2026, 8, 29)
+            st.session_state["p_start"] = "09:00"
+            st.session_state["p_window"] = 6.0
+            st.session_state["p_budget"] = 1000.0
+            st.session_state["p_stops"] = 3
+            st.session_state["p_mode"] = "cab"
+            st.session_state["p_step_free"] = False
+            st.session_state["p_pref_cats"] = []
+
+        def _load_agra_preset_planner():
+            st.session_state["form_p_city"] = "Agra"
+            st.session_state["form_p_date"] = date(2026, 8, 29)
+            st.session_state["form_p_start"] = "09:00"
+            st.session_state["form_p_window"] = 8.0
+            st.session_state["form_p_budget"] = 2000.0
+            st.session_state["form_p_stops"] = 3
+            st.session_state["form_p_mode"] = "cab"
+            st.session_state["form_p_step_free"] = False
+            st.session_state["form_p_pref_cats"] = ["heritage", "museum"]
+            st.session_state["p_city"] = "Agra"
+            st.session_state["p_date"] = date(2026, 8, 29)
+            st.session_state["p_start"] = "09:00"
+            st.session_state["p_window"] = 8.0
+            st.session_state["p_budget"] = 2000.0
+            st.session_state["p_stops"] = 3
+            st.session_state["p_mode"] = "cab"
+            st.session_state["p_step_free"] = False
+            st.session_state["p_pref_cats"] = ["heritage", "museum"]
+
+        st.markdown("**Quick Benchmark Hubs & Presets (Instant 1-Click Load):**")
+        quick_plan_hubs = ["Jaipur (Baseline Spec)", "Agra (Cultural Preset)", "Delhi", "Mumbai", "Varanasi", "Kochi", "Bengaluru"]
+        st.pills(
+            "Quick Benchmark Hubs",
+            quick_plan_hubs,
+            key="pills_planner_hub",
+            on_change=_on_planner_hub_pick,
+            label_visibility="collapsed",
+        )
 
         st.markdown("**Named Planning Presets:**")
         preset_cols = st.columns([1.5, 1.5, 5])
         with preset_cols[0]:
-            if st.button("Load Jaipur Baseline", key="btn_preset_jaipur"):
-                st.session_state["form_p_city"] = "Jaipur"
-                st.session_state["form_p_date"] = date(2026, 8, 29)
-                st.session_state["form_p_start"] = "09:00"
-                st.session_state["form_p_window"] = 6.0
-                st.session_state["form_p_budget"] = 1000.0
-                st.session_state["form_p_stops"] = 3
-                st.session_state["form_p_mode"] = "cab"
-                st.session_state["form_p_step_free"] = False
-                st.session_state["form_p_pref_cats"] = []
-                st.session_state["p_city"] = "Jaipur"
-                st.session_state["p_date"] = date(2026, 8, 29)
-                st.session_state["p_start"] = "09:00"
-                st.session_state["p_window"] = 6.0
-                st.session_state["p_budget"] = 1000.0
-                st.session_state["p_stops"] = 3
-                st.session_state["p_mode"] = "cab"
-                st.session_state["p_step_free"] = False
-                st.session_state["p_pref_cats"] = []
-                st.rerun()
+            st.button("Load Jaipur Baseline", key="btn_preset_jaipur", on_click=_load_jaipur_baseline_planner)
         with preset_cols[1]:
-            if st.button("Load Agra Cultural Preset", key="btn_preset_agra"):
-                st.session_state["form_p_city"] = "Agra"
-                st.session_state["form_p_date"] = date(2026, 8, 29)
-                st.session_state["form_p_start"] = "09:00"
-                st.session_state["form_p_window"] = 8.0
-                st.session_state["form_p_budget"] = 2000.0
-                st.session_state["form_p_stops"] = 3
-                st.session_state["form_p_mode"] = "cab"
-                st.session_state["form_p_step_free"] = False
-                st.session_state["form_p_pref_cats"] = ["heritage", "museum"]
-                st.session_state["p_city"] = "Agra"
-                st.session_state["p_date"] = date(2026, 8, 29)
-                st.session_state["p_start"] = "09:00"
-                st.session_state["p_window"] = 8.0
-                st.session_state["p_budget"] = 2000.0
-                st.session_state["p_stops"] = 3
-                st.session_state["p_mode"] = "cab"
-                st.session_state["p_step_free"] = False
-                st.session_state["p_pref_cats"] = ["heritage", "museum"]
-                st.rerun()
+            st.button("Load Agra Cultural Preset", key="btn_preset_agra", on_click=_load_agra_preset_planner)
 
         # Input Controls - Row 1
         p_col1, p_col2, p_col3, p_col4, p_col5, p_col6 = st.columns([1.4, 1.2, 1.1, 1.0, 1.1, 0.9])
@@ -1520,7 +1647,7 @@ elif view_mode == "Planner":
 
             if should_compute:
                 try:
-                    plans = plan_synthetic_day(
+                    plans = _run_planner_pair_cached(
                         city_name=p_city,
                         visit_date=p_date_iso,
                         start_time=p_start_str,
@@ -1529,7 +1656,7 @@ elif view_mode == "Planner":
                         target_stops=int(p_stops),
                         transport_mode=p_mode,
                         step_free_only=p_step_free,
-                        preferred_categories=p_pref_cats
+                        preferred_categories=tuple(p_pref_cats or ()),
                     )
                 except ValueError as err:
                     st.error(f"Input validation error: {err}")
@@ -1705,15 +1832,22 @@ elif view_mode == "Planner":
                 title=f"Time Spent at Attractions vs in Transit ({p_city})",
                 color_discrete_map={"Attraction Visit Time": "#982b32", "Transit Travel Time": "#365376"}
             )
-            fig_time.update_layout(height=280, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff", margin=dict(l=20, r=20, t=35, b=20))
+            fig_time.update_layout(height=280, margin=dict(l=20, r=20, t=35, b=20))
+            apply_editorial_chart_theme(fig_time)
             st.plotly_chart(fig_time, use_container_width=True)
+
+            def _go_to_compare_from_planner():
+                st.query_params["view"] = "compare"
 
             st.markdown("<br>", unsafe_allow_html=True)
             cmp_btn_c1, cmp_btn_c2 = st.columns([1.5, 1])
             with cmp_btn_c1:
-                if st.button(f"Compare These Plans in Compare View ({p_city}) →", type="primary", key="btn_planner_to_compare"):
-                    st.query_params["view"] = "compare"
-                    st.rerun()
+                st.button(
+                    f"Compare These Plans in Compare View ({p_city}) →",
+                    type="primary",
+                    key="btn_planner_to_compare",
+                    on_click=_go_to_compare_from_planner,
+                )
 
     with tab_legacy_planner:
         st.markdown("""
@@ -1756,8 +1890,11 @@ elif view_mode == "Planner":
 
             elif real_plan_mode == "Search by Settlement Name":
                 settle_search = st.text_input("Enter Settlement Name", value="Badami", key="real_plan_settle_input").strip()
-                cat_store_inst = RealCatalogStore(REAL_CATALOG_DB)
-                found_settles = cat_store_inst.search_settlements(settle_search) if settle_search else []
+                if _ensure_real_catalog_db():
+                    cat_store_inst = RealCatalogStore(REAL_CATALOG_DB)
+                    found_settles = cat_store_inst.search_settlements(settle_search) if settle_search else []
+                else:
+                    found_settles = []
                 if found_settles:
                     settle_map = {f"{s.name} ({s.state} · {s.settlement_type.title()})": s.settlement_id for s in found_settles[:10]}
                     picked_s = st.selectbox("Choose Matching Settlement", list(settle_map.keys()), key="real_plan_settle_pick")
@@ -1947,7 +2084,7 @@ elif view_mode == "Compare":
             key="cmp_subject_radio"
         )
         if "Standard Jaipur Benchmark" in cmp_choice:
-            jaipur_plans = plan_synthetic_day(
+            jaipur_plans = _run_planner_pair_cached(
                 city_name="Jaipur",
                 visit_date="2026-08-29",
                 start_time="09:00",
@@ -1956,7 +2093,7 @@ elif view_mode == "Compare":
                 target_stops=3,
                 transport_mode="cab",
                 step_free_only=False,
-                preferred_categories=[]
+                preferred_categories=(),
             )
             snapshot = {
                 "city": "Jaipur",
@@ -1976,7 +2113,7 @@ elif view_mode == "Compare":
             snapshot = submitted_snap
     else:
         if submitted_snap is None:
-            jaipur_plans = plan_synthetic_day(
+            jaipur_plans = _run_planner_pair_cached(
                 city_name="Jaipur",
                 visit_date="2026-08-29",
                 start_time="09:00",
@@ -1985,7 +2122,7 @@ elif view_mode == "Compare":
                 target_stops=3,
                 transport_mode="cab",
                 step_free_only=False,
-                preferred_categories=[]
+                preferred_categories=(),
             )
             snapshot = {
                 "city": "Jaipur",
@@ -2049,14 +2186,16 @@ elif view_mode == "Compare":
 
         def run_compare_recalc(target_city: str, v_date: str = "2026-08-29", start: str = "09:00",
                                win: float = 6.0, bud: float = 1000.0, stops: int = 3, mode: str = "cab"):
-            new_plans = plan_synthetic_day(
+            new_plans = _run_planner_pair_cached(
                 city_name=target_city,
                 visit_date=v_date,
                 start_time=start,
                 max_duration_hours=win,
                 budget_inr=bud,
                 target_stops=stops,
-                transport_mode=mode
+                transport_mode=mode,
+                step_free_only=False,
+                preferred_categories=(),
             )
             is_fix = (target_city == "Jaipur" and v_date == "2026-08-29" and start == "09:00" and
                       win == 6.0 and bud == 1000.0 and stops == 3 and mode == "cab")
@@ -2080,32 +2219,50 @@ elif view_mode == "Compare":
             if chosen_city:
                 run_compare_recalc(chosen_city)
 
+        def on_cmp_hub_pill_change():
+            picked = st.session_state.get("pills_compare_hub")
+            if not picked:
+                return
+            if "Jaipur" in picked:
+                target_cmp = "Jaipur"
+            elif picked == "Delhi":
+                target_cmp = "New Delhi"
+            else:
+                target_cmp = picked
+            st.session_state["compare_city_select"] = target_cmp
+            run_compare_recalc(target_cmp)
+
+        def on_cmp_jaipur_baseline():
+            st.session_state["compare_city_select"] = "Jaipur"
+            run_compare_recalc("Jaipur")
+
+        def on_cmp_agra_preset():
+            st.session_state["compare_city_select"] = "Agra"
+            run_compare_recalc("Agra", win=9.0, bud=1500.0, stops=4)
+
         st.markdown("**Quick Benchmark Hubs (Instant 1-Click Comparison):**")
         quick_cmp_hubs = ["Jaipur (Spec Baseline)", "Delhi", "Varanasi", "Mumbai", "Kochi", "Agra", "Bengaluru"]
-        picked_cmp_hub = st.pills("Quick Benchmark Hubs", quick_cmp_hubs, key="pills_compare_hub", label_visibility="collapsed")
-        if picked_cmp_hub:
-            target_cmp = "Jaipur" if "Jaipur" in picked_cmp_hub else picked_cmp_hub
-            if target_cmp != st.session_state.get("compare_city_select"):
-                st.session_state["compare_city_select"] = target_cmp
-                run_compare_recalc(target_cmp)
-                st.rerun()
+        st.pills(
+            "Quick Benchmark Hubs",
+            quick_cmp_hubs,
+            key="pills_compare_hub",
+            on_change=on_cmp_hub_pill_change,
+            label_visibility="collapsed",
+        )
 
         ctrl_c1, ctrl_c2, ctrl_c3, ctrl_c4 = st.columns([1.6, 1.2, 1.3, 1.3], vertical_alignment="bottom")
         with ctrl_c1:
             selected_cmp_city = st.selectbox("Select Study City to Compare", all_city_names, index=current_city_idx, key="compare_city_select", on_change=on_cmp_city_dropdown_change)
         with ctrl_c2:
-            if st.button(f"Recalculate {selected_cmp_city}", key="btn_run_compare_city"):
-                run_compare_recalc(selected_cmp_city)
-                st.rerun()
+            st.button(
+                f"Recalculate {selected_cmp_city}",
+                key="btn_run_compare_city",
+                on_click=lambda: run_compare_recalc(st.session_state.get("compare_city_select", selected_cmp_city)),
+            )
         with ctrl_c3:
-            if st.button("Load Jaipur Baseline", key="btn_load_jaipur_baseline_cmp"):
-                run_compare_recalc("Jaipur")
-                st.session_state["compare_city_select"] = "Jaipur"
-                st.rerun()
+            st.button("Load Jaipur Baseline", key="btn_load_jaipur_baseline_cmp", on_click=on_cmp_jaipur_baseline)
         with ctrl_c4:
-            if st.button("Load Agra Preset (4 Stops)", key="btn_load_agra_preset_cmp"):
-                run_compare_recalc("Agra", win=9.0, bud=1500.0, stops=4)
-                st.rerun()
+            st.button("Load Agra Preset (4 Stops)", key="btn_load_agra_preset_cmp", on_click=on_cmp_agra_preset)
 
         # Context header
         if is_fixture:
@@ -2201,8 +2358,6 @@ elif view_mode == "Compare":
         fig_cmp_bar.update_layout(
             barmode="group",
             height=300,
-            paper_bgcolor="#f7f3e9",
-            plot_bgcolor="#ffffff",
             margin=dict(l=20, r=20, t=55, b=50),
             title=dict(
                 text=f"Direct Trade-Off Comparison: Plan A vs Plan B ({cmp_city})",
@@ -2219,6 +2374,7 @@ elif view_mode == "Compare":
                 title_text=""
             )
         )
+        apply_editorial_chart_theme(fig_cmp_bar)
         st.plotly_chart(fig_cmp_bar, use_container_width=True)
 
         cmp_col1, cmp_col2 = st.columns(2)
@@ -2403,10 +2559,19 @@ elif view_mode == "DEV Lab":
 
         st.markdown("**Quick-Select Table Chips:**")
         quick_tbls = ["trips", "activities_poi", "user_interactions", "events_festivals", "itineraries", "poi_travel_matrix"]
-        picked_tbl_pill = st.pills("Quick Table Pick", quick_tbls, key="pills_quick_table_pick", label_visibility="collapsed")
-        if picked_tbl_pill and picked_tbl_pill != st.session_state.get("devlab_tab1_table_select"):
-            st.session_state["devlab_tab1_table_select"] = picked_tbl_pill
-            st.rerun()
+
+        def _on_devlab_quick_table_pick():
+            picked = st.session_state.get("pills_quick_table_pick")
+            if picked:
+                st.session_state["devlab_tab1_table_select"] = picked
+
+        st.pills(
+            "Quick Table Pick",
+            quick_tbls,
+            key="pills_quick_table_pick",
+            on_change=_on_devlab_quick_table_pick,
+            label_visibility="collapsed",
+        )
 
         tbl_names = sorted(list(cat.tables.keys()))
         param_table = str(st.query_params.get("table", "")).strip()
@@ -2546,7 +2711,8 @@ elif view_mode == "DEV Lab":
                     title="Telemetry Action Breakdown",
                     color_discrete_sequence=["#982b32"]
                 )
-                fig_act_bar.update_layout(height=240, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff", margin=dict(l=20, r=20, t=35, b=20))
+                fig_act_bar.update_layout(height=240, margin=dict(l=20, r=20, t=35, b=20))
+                apply_editorial_chart_theme(fig_act_bar)
                 st.plotly_chart(fig_act_bar, use_container_width=True)
 
             st.markdown(f"**Transformed Telemetry Summary Table:**")
@@ -2616,7 +2782,8 @@ elif view_mode == "DEV Lab":
                 colorscale="Burg",
                 hoverongaps=False
             ))
-            fig_hm.update_layout(height=480, paper_bgcolor="#f7f3e9", margin=dict(l=20, r=20, t=20, b=20), xaxis_title="Cultural Category", yaxis_title="Study City")
+            fig_hm.update_layout(height=480, margin=dict(l=20, r=20, t=20, b=20), xaxis_title="Cultural Category", yaxis_title="Study City")
+            apply_editorial_chart_theme(fig_hm)
             st.plotly_chart(fig_hm, use_container_width=True)
 
             st.markdown("**Companion Wide Pivot Table:**")
@@ -2743,7 +2910,8 @@ elif view_mode == "DEV Lab":
                 name="Bayesian Beta(1,1)",
                 line=dict(color="#982b32", width=4)
             ))
-            fig_u1.update_layout(height=240, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff", margin=dict(l=20, r=20, t=20, b=20), xaxis_title="Cultural Trip Proportion (%)")
+            fig_u1.update_layout(height=240, margin=dict(l=20, r=20, t=20, b=20), xaxis_title="Cultural Trip Proportion (%)")
+            apply_editorial_chart_theme(fig_u1)
             st.plotly_chart(fig_u1, use_container_width=True)
 
         elif "Cultural Category" in sg_choice:
@@ -2759,16 +2927,15 @@ elif view_mode == "DEV Lab":
             fig_cat_donut.update_layout(
                 title="Cultural Category Breakdown (211 Attractions)",
                 height=360,
-                paper_bgcolor="#f7f3e9",
                 margin=dict(l=20, r=20, t=40, b=20)
             )
+            apply_editorial_chart_theme(fig_cat_donut)
             st.plotly_chart(fig_cat_donut, use_container_width=True)
             st.caption("Provenance: 211 attractions across 45 Indian study cities strictly classified into Heritage, Museums, Religious, and Food experiences.")
 
         elif "Telemetry Actions" in sg_choice:
             st.markdown("**WanderMatch Interaction Telemetry Distribution (6,850 Matched Events):**")
-            with open_study_cache() as conn:
-                act_df = pd.read_sql_query("SELECT interaction_type, count(*) as count FROM user_interactions GROUP BY interaction_type ORDER BY count DESC", conn)
+            act_df = _get_devlab_actions_df()
 
             fig_act_pie = px.pie(
                 act_df,
@@ -2780,21 +2947,15 @@ elif view_mode == "DEV Lab":
             )
             fig_act_pie.update_layout(
                 height=360,
-                paper_bgcolor="#f7f3e9",
                 margin=dict(l=20, r=20, t=40, b=20)
             )
+            apply_editorial_chart_theme(fig_act_pie)
             st.plotly_chart(fig_act_pie, use_container_width=True)
             st.caption("Telemetry Breakdown: 6,850 user interaction events matched to attractions in study cities across saves, views, reviews, and bookings.")
 
         elif "Histogram" in sg_choice:
             st.markdown("**Entry Cost Distribution across Cultural Categories (45 Indian Study Cities):**")
-            with open_study_cache() as conn:
-                poi_df = pd.read_sql_query("""
-                    SELECT p.poi_id, p.name, p.poi_category, c.name as city_name, CAST(p.entry_cost AS REAL) as entry_cost
-                    FROM activities_poi p
-                    JOIN cities c USING(city_id)
-                    WHERE c.country_code = 'IN' AND p.entry_cost IS NOT NULL
-                """, conn)
+            poi_df = _get_devlab_poi_costs_df()
 
             hm1, hm2, hm3, hm4 = st.columns(4)
             hm1.metric("Study Attractions", f"{len(poi_df):,} POIs", "45 Indian Study Cities")
@@ -2811,7 +2972,8 @@ elif view_mode == "DEV Lab":
                 color_discrete_sequence=["#982b32", "#365376", "#b79d5b", "#7d6f58", "#4f637b", "#8b7e66", "#292925"],
                 title="Histogram of Attraction Entry Costs by Cultural Category (45 Indian Cities, Max INR 2,500)"
             )
-            fig_dist.update_layout(height=340, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff", margin=dict(l=20, r=20, t=35, b=20), xaxis_title="Entry Fee (INR)", yaxis_title="Attraction Count")
+            fig_dist.update_layout(height=340, margin=dict(l=20, r=20, t=35, b=20), xaxis_title="Entry Fee (INR)", yaxis_title="Attraction Count")
+            apply_editorial_chart_theme(fig_dist)
             st.plotly_chart(fig_dist, use_container_width=True)
 
             fig_box = px.box(
@@ -2822,21 +2984,15 @@ elif view_mode == "DEV Lab":
                 color_discrete_sequence=["#982b32", "#365376", "#b79d5b", "#7d6f58", "#4f637b", "#8b7e66", "#292925"],
                 title="Entry Fee Box Plots by Category (Natural Indian Cohort Dispersion)"
             )
-            fig_box.update_layout(height=320, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff", margin=dict(l=20, r=20, t=35, b=20), xaxis_title="Category", yaxis_title="Entry Fee (INR)")
+            fig_box.update_layout(height=320, margin=dict(l=20, r=20, t=35, b=20), xaxis_title="Category", yaxis_title="Entry Fee (INR)")
+            apply_editorial_chart_theme(fig_box)
             st.plotly_chart(fig_box, use_container_width=True)
 
             st.caption("Distribution Insight: 38% of cultural venues are completely free. Ticketed heritage and museum sites cluster tightly between INR 50 and INR 500, with top-tier private heritage experiences capping at INR 2,500.")
 
         elif "ECDF" in sg_choice:
             st.markdown("**Empirical Cumulative Distribution Function (ECDF) of Event Footfall:**")
-            with open_study_cache() as conn:
-                events_df = pd.read_sql_query("""
-                    SELECT e.name, e.expected_footfall, e.recurrence, e.season, c.name as city_name
-                    FROM events_festivals e
-                    JOIN cities c USING(city_id)
-                    WHERE c.country_code = 'IN' AND e.expected_footfall IS NOT NULL
-                    ORDER BY e.expected_footfall ASC
-                """, conn)
+            events_df = _get_devlab_events_df()
 
             ef1, ef2, ef3, ef4 = st.columns(4)
             ef1.metric("Audited Festivals", f"{len(events_df):,}", "Complete event records")
@@ -2855,22 +3011,14 @@ elif view_mode == "DEV Lab":
             p90_val = float(events_df['expected_footfall'].quantile(0.90))
             fig_ecdf.add_vline(x=med_val, line_dash="dash", line_color="#982b32", annotation_text=f"P50 Median: {int(med_val):,}", annotation_position="top left")
             fig_ecdf.add_vline(x=p90_val, line_dash="dot", line_color="#365376", annotation_text=f"P90 Decile: {int(p90_val):,}", annotation_position="top left")
-            fig_ecdf.update_layout(height=340, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff", margin=dict(l=20, r=20, t=35, b=20), xaxis_title="Expected Footfall Attendees", yaxis_title="Cumulative Probability F_n(x)")
+            fig_ecdf.update_layout(height=340, margin=dict(l=20, r=20, t=35, b=20), xaxis_title="Expected Footfall Attendees", yaxis_title="Cumulative Probability F_n(x)")
+            apply_editorial_chart_theme(fig_ecdf)
             st.plotly_chart(fig_ecdf, use_container_width=True)
             st.caption("Syllabus Takeaway: Festival expected footfalls are uniformly distributed between 3,133 and 218,180 attendees with a sample median of 110,811. The step-wise empirical CDF shows no extreme multi-modal polarization.")
 
         elif "Bivariate" in sg_choice:
             st.markdown("**Bivariate Scatter: Attraction Entry Fee vs WanderMatch Telemetry Saves:**")
-            with open_study_cache() as conn:
-                biv_df = pd.read_sql_query("""
-                    SELECT a.poi_id, a.name, a.poi_category, c.name as city_name, CAST(a.entry_cost AS REAL) as entry_cost, count(ui.interaction_id) as saves_count
-                    FROM activities_poi a
-                    JOIN cities c USING(city_id)
-                    LEFT JOIN user_interactions ui ON ui.entity_id = a.poi_id AND ui.interaction_type = 'save'
-                    WHERE c.country_code = 'IN' AND a.entry_cost IS NOT NULL
-                    GROUP BY a.poi_id
-                    HAVING saves_count > 0
-                """, conn)
+            biv_df = _get_devlab_bivariate_df().copy()
 
             spearman_corr = biv_df["entry_cost"].corr(biv_df["saves_count"], method="spearman")
             pearson_corr = biv_df["entry_cost"].corr(biv_df["saves_count"], method="pearson")
@@ -2936,13 +3084,12 @@ elif view_mode == "DEV Lab":
                 )
                 fig_biv_bar.update_layout(
                     height=380,
-                    paper_bgcolor="#f7f3e9",
-                    plot_bgcolor="#ffffff",
                     margin=dict(l=20, r=20, t=35, b=20),
                     yaxis=dict(range=[0, 2.2], title="Average Saves per Venue"),
                     xaxis=dict(title="Economic Price Tier"),
                     coloraxis_showscale=False
                 )
+                apply_editorial_chart_theme(fig_biv_bar)
                 st.plotly_chart(fig_biv_bar, use_container_width=True)
                 st.caption(
                     "Intuitive Bar Chart Alternative: Groups 363 saved venues into 5 economic price brackets rather than unreadable individual points. "
@@ -2962,7 +3109,8 @@ elif view_mode == "DEV Lab":
                     title=f"Attraction Entry Fee vs User Saves (All 363 Saved Indian Study POIs, Max INR 2,500)"
                 )
                 fig_biv.update_traces(marker=dict(size=9, opacity=0.8, line=dict(width=1, color="#292925")))
-                fig_biv.update_layout(height=380, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff", margin=dict(l=20, r=20, t=35, b=20))
+                fig_biv.update_layout(height=380, margin=dict(l=20, r=20, t=35, b=20))
+                apply_editorial_chart_theme(fig_biv)
                 st.plotly_chart(fig_biv, use_container_width=True)
                 st.caption("Point Scatter Representation: Each point represents an individual saved study attraction plotted against its entry fee.")
 

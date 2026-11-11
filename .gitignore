@@ -13,11 +13,17 @@ venv/
 .coverage
 htmlcov/
 
-# Local data extracts and generated catalog index (reproduced via cultureroute.ingest)
-data/
+# Local data extracts and generated catalog index (keep small public source extracts tracked for Render)
+data/*
+!data/india_boundary.geojson
+!data/unlocode_raw.csv
+!data/wikidata_unesco_india.json
+!data/source_manifest.json
 *.db
+*.db-*
 !SmartTrip/data/*.db
 !WanderMatch/data/*.db
 
-# Streamlit local state
-.streamlit/
+# Streamlit secrets/state (keep light theme config tracked for cloud deploy)
+.streamlit/*
+!.streamlit/config.toml

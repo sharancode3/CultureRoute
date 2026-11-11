@@ -22,7 +22,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from cultureroute.ui_components import render_section_banner
+from cultureroute.ui_components import apply_editorial_chart_theme, render_section_banner
 
 from cultureroute.prediction_model import (
     ARTIFACT_PATH,
@@ -86,11 +86,20 @@ def render_model_screen() -> None:
             def_city = st.session_state.get("default_city", "Jaipur")
 
             st.markdown("**Quick City Hubs:**")
-            quick_pred_cities = ["Jaipur", "Delhi", "Mumbai", "Varanasi", "Kochi", "Agra", "Bengaluru"]
-            picked_pred_city = st.pills("Quick City Hubs", quick_pred_cities, key="pills_model_quick_city", label_visibility="collapsed")
-            if picked_pred_city and picked_pred_city != st.session_state.get("p6_city_inspect_select"):
-                st.session_state["p6_city_inspect_select"] = picked_pred_city
-                st.rerun()
+            quick_pred_cities = ["Jaipur", "New Delhi", "Mumbai", "Varanasi", "Kochi", "Agra", "Bengaluru"]
+
+            def _on_model_pill_pick() -> None:
+                picked = st.session_state.get("pills_model_quick_city")
+                if picked:
+                    st.session_state["p6_city_inspect_select"] = picked
+
+            st.pills(
+                "Quick City Hubs",
+                quick_pred_cities,
+                key="pills_model_quick_city",
+                label_visibility="collapsed",
+                on_change=_on_model_pill_pick,
+            )
 
             cur_p6_city = st.session_state.get("p6_city_inspect_select", def_city)
             sel_idx = city_names.index(cur_p6_city) if cur_p6_city in city_names else 0
@@ -200,6 +209,7 @@ def render_model_screen() -> None:
                 legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5, title_text=""),
                 yaxis=dict(title="Error (Interactions / City-Week)", range=[0, 1.6]),
             )
+            apply_editorial_chart_theme(fig_bar)
             st.plotly_chart(fig_bar, use_container_width=True)
 
         with chart_c2:

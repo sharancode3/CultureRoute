@@ -1,0 +1,930 @@
+[
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q66485"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(75.82 26.915)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Jaipur"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q167298"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(79.92222 24.85222)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Khajuraho Group of Monuments"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q167298"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(79.93333333 24.85)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Khajuraho Group of Monuments"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q171857"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(78.021297222 27.179583333)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Agra Fort"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q179046"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.661111111 27.091111111)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Fatehpur Sikri"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q181123"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.73972222 23.47944444)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Sanchi"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q184427"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(75.70047222 20.55341667)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Ajanta Caves"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q187635"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.185248 28.524355)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Qutb Minar"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q4513"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(84.991358 24.696004)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Mahabodhi Temple"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q4527"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.061111111 10.169722222)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Western Ghats"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q9141"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(78.041944444 27.175)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Taj Mahal"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q9468"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(70.21666667 23.88611111)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Dholavira"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q26732"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(76.462162 15.334547)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Hampi"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q45957"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.240277777 28.655833333)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Red Fort"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q324394"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(83.021388888 25.381111111)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Sarnath"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q331603"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.61438056 22.93863333)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Bhimbetka rock shelters"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q189616"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(75.179166666 20.026388888)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Ellora Caves"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q189648"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.250602 28.593264)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Humayun's Tomb"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q192764"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(93.35 26.666666666)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Kaziranga National Park"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q216243"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(85.443827777 25.136797222)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Nalanda Mahavihara"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q235878"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.516667 27.166667)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Kevladev National Park"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q235884"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(72.8355 18.9398)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Chhatrapati Shivaji Maharaj Terminus"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q506511"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(90.933333333 26.716666666)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Manas National Park"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q508634"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(75.825 26.924722222)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Jantar Mantar"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q532440"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(88.75 21.75)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Sundarbans National Park"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q543419"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.185069444 28.524655555)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "iron pillar of Delhi"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q605897"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(79.6175 30.73)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Valley of Flowers National Park"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q55619850"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(6.829336 46.468414)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "The Architectural Work of Le Corbusier"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q65041035"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.2462 28.5922)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Tomb of Isa Khan"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q66023123"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(75.994072 13.212453)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Sacred Ensembles of the Hoysalas"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q116451393"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(76.8041 30.75961)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Tower of Shadows"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q134550841"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(72.590006 23.018162)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Dhal ni Pol"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q134720951"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(73.9425 20.7225)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Maratha Military Landscapes of India"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q649384"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(72.931388888 18.963333333)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Elephanta Caves"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q695229"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(79.1325 10.783055555)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Great Living Chola Temples"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q752091"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(86.094596 19.887444)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Konark Sun Temple"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q817250"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(75.814638888 15.951333333)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Pattadakal Group of Monuments"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q817250"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(75.816666666 15.948333333)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Pattadakal Group of Monuments"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q844427"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(73.533333333 22.483333333)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Champaner-Pavagadh Archaeological Park"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q1026431"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(87.6852 23.6776)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Santiniketan"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q1074330"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.18543 28.524382)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Qutb complex"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q1544213"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.951021 31.804288)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Great Himalayan National Park"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q1648266"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(79.849722222 30.418611111)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Nanda Devi National Park"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q1753664"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(80.19166667 12.61666667)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Descent of the Ganges"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q2045115"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(77.21647778 28.62710833)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Jantar Mantar"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q2605019"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(88.3123 27.6563)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Khangchendzonga National Park"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q3380656"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(79.9425 18.259444444)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Ramappa Temple"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q3522747"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(80.191666666 12.616666666)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Group of monuments at Mahabalipuram"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q5472448"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(72.5875 23.0256)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Historic City of Ahmadabad"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q6343582"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(73.8227916 17.7201607)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Kaas Plateau"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q6735332"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(94.875 26.943611111)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Maidam"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q6735332"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(94.8792 26.9431)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Maidam"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q7293002"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(72.10162 23.85892)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Rani ki vav"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q7444209"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(76.800555555 30.761111111)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Secretariat Building"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q10428494"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(74.646111 24.883306)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Hill Forts of Rajasthan"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q15726428"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(73.9117 15.5024)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Churches and Convents of Goa"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q15839097"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(79.66667 30.71667)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Nanda Devi and Valley of Flowers National Parks"
+    }
+  },
+  {
+    "item": {
+      "type": "uri",
+      "value": "http://www.wikidata.org/entity/Q16942531"
+    },
+    "coord": {
+      "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+      "type": "literal",
+      "value": "Point(72.830083 18.929806)"
+    },
+    "itemLabel": {
+      "xml:lang": "en",
+      "type": "literal",
+      "value": "Victorian Gothic and Art Deco Ensembles of Mumbai"
+    }
+  }
+]

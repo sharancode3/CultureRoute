@@ -1,0 +1,52 @@
+{
+  "manifest_version": "2.0.0",
+  "snapshot_date": "2026-11-09",
+  "datasets": [
+    {
+      "dataset_id": "unlocode_in",
+      "name": "UNECE UN/LOCODE (India Extract)",
+      "publisher": "United Nations Economic Commission for Europe (UNECE)",
+      "version": "2024-2 / 2026-1",
+      "license": "Public Domain",
+      "license_url": "https://unece.org/trade/cefact/unlocode",
+      "file_path": "data/unlocode_raw.csv",
+      "scope": "All Indian ISO 3166-2:IN subdivisions (ports, rail terminals, airports, towns)",
+      "expected_record_type": "settlements",
+      "sha256": "da4bc5fa5c08e9eeb9f38eacd28bcfc091444be873674a25e4cc5c74e611f9ae"
+    },
+    {
+      "dataset_id": "wikidata_unesco",
+      "name": "Wikidata UNESCO World Heritage Cultural Sites in India",
+      "publisher": "Wikidata Contributors",
+      "version": "Snapshot 2026-10-15",
+      "license": "Creative Commons CC0 1.0 Universal Public Domain Dedication",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "file_path": "data/wikidata_unesco_india.json",
+      "scope": "Nationwide UNESCO World Heritage monuments in India with verified coordinates",
+      "expected_record_type": "cultural_attractions",
+      "sha256": "89877eadcdf5b33a7ba46cb4ce6a9fe123b654cdf7fc3eceaf2505369aa49a1a"
+    },
+    {
+      "dataset_id": "india_boundary",
+      "name": "India Country Territory MultiPolygon Boundary",
+      "publisher": "DataMeet Maps / Natural Earth Vector",
+      "version": "2026-11-09",
+      "license": "Open Data Commons Open Database License (ODbL) / Public Domain",
+      "license_url": "https://opendatacommons.org/licenses/odbl/",
+      "file_path": "data/india_boundary.geojson",
+      "scope": "Official ISO 3166-1 IND mainland boundary, Andaman & Nicobar, and Lakshadweep islands with interior holes",
+      "expected_record_type": "boundary_geometry",
+      "sha256": "16f947c01c1737f18ecb411fe903f01f0f16f13c4e2717ebdced4ff6dc4140bc"
+    },
+    {
+      "dataset_id": "asi_curated_pilot",
+      "name": "Vetted Cultural Heritage Pilot Sites",
+      "publisher": "Archaeological Survey of India (ASI) / Primary Gazettes",
+      "version": "2026-11-09",
+      "license": "Government Open Data / Public Domain citation",
+      "license_url": "https://asi.nic.in/",
+      "scope": "Curated archaeological monuments and cultural heritage across 10+ States/UTs",
+      "expected_record_type": "cultural_attractions"
+    }
+  ]
+}

@@ -20,7 +20,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from cultureroute.ui_components import render_section_banner
+from cultureroute.ui_components import apply_editorial_chart_theme, render_section_banner
 
 from cultureroute.analytics import (
     compute_cultural_shares,
@@ -30,6 +30,27 @@ from cultureroute.analytics import (
     CULTURAL_CATEGORIES,
 )
 from cultureroute.study_db import DEFAULT_STUDY_DB, open_study_cache
+
+
+@st.cache_data(ttl=3600)
+def _get_insights_bivariate_df() -> pd.DataFrame:
+    """Cached SQLite query for fee vs user saves bivariate scatter plot."""
+    with open_study_cache() as conn:
+        return pd.read_sql_query("""
+            SELECT 
+                p.poi_id,
+                p.name,
+                p.poi_category,
+                c.name as city_name,
+                CAST(p.entry_cost AS REAL) as entry_fee,
+                COUNT(u.interaction_id) as total_interactions,
+                SUM(CASE WHEN u.interaction_type = 'save' THEN 1 ELSE 0 END) as save_count
+            FROM activities_poi p
+            JOIN cities c ON p.city_id = c.city_id
+            LEFT JOIN user_interactions u ON u.entity_id = p.poi_id AND u.entity_type = 'poi'
+            WHERE c.country_code = 'IN'
+            GROUP BY p.poi_id, p.name, p.poi_category, c.name, p.entry_cost
+        """, conn)
 
 
 def render_insights_screen() -> None:
@@ -108,6 +129,7 @@ def render_insights_screen() -> None:
                 yaxis=dict(title="Percentage (%)", range=[0, 100]),
                 legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5, title_text="")
             )
+            apply_editorial_chart_theme(fig_pop)
             st.plotly_chart(fig_pop, use_container_width=True)
         else:
             d_c1, d_c2, d_c3, d_c4 = st.columns(4)
@@ -127,6 +149,7 @@ def render_insights_screen() -> None:
                     paper_bgcolor="#f7f3e9",
                     showlegend=False
                 )
+                apply_editorial_chart_theme(fig_d1)
                 st.plotly_chart(fig_d1, use_container_width=True)
                 st.caption(f"211 / 675 attractions ({l_info.share_percent:.1f}%)")
 
@@ -146,6 +169,7 @@ def render_insights_screen() -> None:
                     paper_bgcolor="#f7f3e9",
                     showlegend=False
                 )
+                apply_editorial_chart_theme(fig_d2)
                 st.plotly_chart(fig_d2, use_container_width=True)
                 st.caption(f"2,144 / 6,850 events ({i_info.share_percent:.1f}%)")
 
@@ -165,6 +189,7 @@ def render_insights_screen() -> None:
                     paper_bgcolor="#f7f3e9",
                     showlegend=False
                 )
+                apply_editorial_chart_theme(fig_d3)
                 st.plotly_chart(fig_d3, use_container_width=True)
                 st.caption(f"961 / 3,191 stops ({s_info.share_percent:.1f}%)")
 
@@ -187,6 +212,7 @@ def render_insights_screen() -> None:
                     paper_bgcolor="#f7f3e9",
                     showlegend=False
                 )
+                apply_editorial_chart_theme(fig_d4)
                 st.plotly_chart(fig_d4, use_container_width=True)
                 st.caption("211 Cultural Attractions Breakdown")
 
@@ -268,6 +294,7 @@ def render_insights_screen() -> None:
                 yaxis_title="Cultural Interactions Count",
                 legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5, title_text="")
             )
+            apply_editorial_chart_theme(fig_fc)
             st.plotly_chart(fig_fc, use_container_width=True)
 
             if fc_res.next_week_start:
@@ -328,6 +355,7 @@ def render_insights_screen() -> None:
             )
             fig_m.update_traces(marker_color="#365376")
             fig_m.update_layout(height=340, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff")
+            apply_editorial_chart_theme(fig_m)
             st.plotly_chart(fig_m, use_container_width=True)
 
             st.dataframe(monthly_summary, hide_index=True, use_container_width=True)
@@ -375,6 +403,7 @@ def render_insights_screen() -> None:
         )
         fig_mae.update_traces(textposition="outside")
         fig_mae.update_layout(height=320, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff", showlegend=False)
+        apply_editorial_chart_theme(fig_mae)
         st.plotly_chart(fig_mae, use_container_width=True)
 
         st.dataframe(mae_comp_df, hide_index=True, use_container_width=True)
@@ -396,23 +425,8 @@ def render_insights_screen() -> None:
         eda_c3.metric("Median Entry Fee", f"INR {price_stats.median_price:.2f}")
         eda_c4.metric("Fee IQR", f"INR {price_stats.iqr_price:.2f}", f"Q1: {price_stats.q1_price:.0f} | Q3: {price_stats.q3_price:.0f}")
 
-        # Bivariate query: Entry Fee vs Saves
-        with open_study_cache() as conn:
-            biv_df = pd.read_sql_query("""
-                SELECT 
-                    p.poi_id,
-                    p.name,
-                    p.poi_category,
-                    c.name as city_name,
-                    CAST(p.entry_cost AS REAL) as entry_fee,
-                    COUNT(u.interaction_id) as total_interactions,
-                    SUM(CASE WHEN u.interaction_type = 'save' THEN 1 ELSE 0 END) as save_count
-                FROM activities_poi p
-                JOIN cities c ON p.city_id = c.city_id
-                LEFT JOIN user_interactions u ON u.entity_id = p.poi_id AND u.entity_type = 'poi'
-                WHERE c.country_code = 'IN'
-                GROUP BY p.poi_id, p.name, p.poi_category, c.name, p.entry_cost
-            """, conn)
+        # Bivariate query: Entry Fee vs Saves (cached)
+        biv_df = _get_insights_bivariate_df()
 
         corr_val = biv_df["entry_fee"].corr(biv_df["save_count"])
 
@@ -427,6 +441,7 @@ def render_insights_screen() -> None:
             title=f"Bivariate Scatter: Entry Fee vs Saves per Attraction (Pearson r = {corr_val:.3f})"
         )
         fig_biv.update_layout(height=380, paper_bgcolor="#f7f3e9", plot_bgcolor="#ffffff")
+        apply_editorial_chart_theme(fig_biv)
         st.plotly_chart(fig_biv, use_container_width=True)
 
         st.markdown(f"""

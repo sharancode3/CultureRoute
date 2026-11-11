@@ -148,6 +148,7 @@ def open_study_databases(
                 pass
 
 
+@lru_cache(maxsize=1)
 def verify_and_audit_study() -> AuditReport:
     """Run full verification across the 24 distinct tables and 8 checkpoints."""
     with open_study_databases() as (smart, wander):

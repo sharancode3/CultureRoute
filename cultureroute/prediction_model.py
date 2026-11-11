@@ -32,6 +32,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timedelta
+from functools import lru_cache
 import json
 import math
 from pathlib import Path
@@ -108,6 +109,7 @@ class DatedPredictionResult:
     total_predicted_interactions: float
 
 
+@lru_cache(maxsize=1)
 def build_city_week_panel() -> PanelDataset:
     """Build the balanced 45 cities x 57 weeks panel and engineer past-only lag features."""
     with open_study_databases() as (smart, _):
