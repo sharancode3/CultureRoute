@@ -975,14 +975,20 @@ def _build_editorial_css(is_reduced: bool) -> str:
     }}
 
     [data-testid="stExpander"] summary,
-    [data-testid="stExpander"] summary * {{
+    [data-testid="stExpander"] summary *:not([data-testid="stIconMaterial"]) {{
         font-family: var(--display) !important;
         font-size: 1.05rem !important;
         color: var(--ink) !important;
     }}
 
+    [data-testid="stExpander"] summary [data-testid="stIconMaterial"],
+    [data-testid="stIconMaterial"] {{
+        font-family: "Material Symbols Rounded" !important;
+        font-size: 1.25rem !important;
+    }}
+
     [data-testid="stExpander"] summary:hover,
-    [data-testid="stExpander"] summary:hover * {{
+    [data-testid="stExpander"] summary:hover *:not([data-testid="stIconMaterial"]) {{
         color: var(--red) !important;
     }}
 
